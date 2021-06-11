@@ -13,12 +13,12 @@
 \TLV
    $reset = *reset;
 
-   // RV_D3SK1_L3_Labs For Combinational Logic
-   // Lab: Combinatorial Calculator
+   // RV_D3SK2_L2_Sequential Calculator Lab
+   // Lab: Sequential Calculator
    
-   // Random operands
-   $val1[31:0] = $rand1[3:0];
-   $val2[31:0] = $rand2[3:0];
+   // Initialize operands
+   $val1[31:0] = (>>1$out);
+   $val2[31:0] = $rand1[3:0];
    
    // Perform operations
    $sum[31:0] = $val1 + $val2 ;
@@ -27,11 +27,15 @@
    $quot[31:0] = $val1 / $val2 ;
    
    // Select result
-   $out[31:0] = $op[1:0] == 2'b00 ? $sum :
-                     $op == 2'b01 ? $diff :
-                     $op == 2'b10 ? $prod :
-                     //$op == 2'b11
-                     $quot;
+   $out[31:0] = $reset ? 32'b0 :
+                $op[1:0] == 2'b00 ? $sum :
+                $op == 2'b01 ? $diff :
+                $op == 2'b10 ? $prod :
+                //$op == 2'b11
+                $quot;
+   
+   // Free-running counter
+   $cnt[31:0] = $reset ? 32'b0 : 1 + (>>1$cnt);
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = *cyc_cnt > 40;
