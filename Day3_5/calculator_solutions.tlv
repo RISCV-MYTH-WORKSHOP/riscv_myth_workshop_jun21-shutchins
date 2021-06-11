@@ -12,32 +12,41 @@
                                        
 \TLV
    |calc
-      @1
+      @0
+         // to enable viz
          $reset = *reset;
          
-         // YOUR CODE HERE
-         // Initialize operands
-         $val1[31:0] = (>>1$out);
+      @1
+         // Free-running counter
+         $valid = $reset ? 1'b0 : 1'b1 + (>>1$valid);
+         $reset_or_valid = $reset || $valid;
+         
+         $val1[31:0] = >>2$out;
          $val2[31:0] = $rand1[3:0];
          
-         // Perform operations
-         $sum[31:0] = $val1 + $val2 ;
-         $diff[31:0] = $val1 - $val2 ;
-         $prod[31:0] = $val1 * $val2 ;
-         $quot[31:0] = $val1 / $val2 ;
+      ?$reset_or_valid
+         @1
+            // Perform operations
+            $sum[31:0] = $val1 + $val2 ;
+            $diff[31:0] = $val1 - $val2 ;
+            $prod[31:0] = $val1 * $val2 ;
+            $quot[31:0] = $val1 / $val2 ;
+            
+         @2
          
-         // Select result
-         $out[31:0] = $reset ? 32'b0 :
-           $op[1:0] == 2'b00 ? $sum :
-           $op == 2'b01 ? $diff :
-           $op == 2'b10 ? $prod :
-           //$op == 2'b11
-           $quot;
+            // memory store
+            $mem[31:0] = $reset ? 32'b0 :
+               $op == 3'b101 ? $out : >>2$mem;
+            
+            // Select result
+            $out[31:0] = $reset ? 32'b0 :
+              $op[2:0] == 2'b000 ? $sum :
+              $op == 3'b001 ? $diff :
+              $op == 3'b010 ? $prod :
+              $op == 3'b011 ? $quot :
+              $op == 3'b100 ? (>>2$mem) :
+              (>>2$out);
          
-         // Free-running counter
-         $cnt[31:0] = $reset ? 32'b0 : 1 + (>>1$cnt);
-         
-
       // Macro instantiations for calculator visualization(disabled by default).
       // Uncomment to enable visualisation, and also,
       // NOTE: If visualization is enabled, $op must be defined to the proper width using the expression below.
@@ -47,8 +56,7 @@
       //  o $rand2[3:0]
       //  o $op[x:0]
       
-   //m4+cal_viz(@3) // Arg: Pipeline stage represented by viz, should be atleast equal to last stage of CALCULATOR logic.
-
+   m4+cal_viz(@3) // Arg: Pipeline stage represented by viz, should be atleast equal to last stage of CALCULATOR logic.
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = *cyc_cnt > 40;
