@@ -15,3 +15,28 @@ Add your codes in the [calculator_solutions.tlv](calculator_solutions.tlv) and [
 ## Decoding Instructions
 
 ![c](Screenshot%202021-06-11%20230912.png)
+
+# Day 5
+
+## Three-stage pipeline
+
+![a](Screenshot%202021-06-12%20112415.png)
+
+![b](Screenshot%202021-06-12%20123532.png)
+
+## Implementing branching instructions
+
+![a](Screenshot%202021-06-12%20135818.png)
+
+## Implementing remaining RV32I instructions
+
+![a](Screenshot%202021-06-12%20142609.png)
+
+## Implementing load and store instructions
+
+![a](Screenshot%202021-06-12%20172553.png)
+
+## Final RISC-V Core after implementing jump instructions
+
+![a](Screenshot%202021-06-12%20172716.png)
+![b](Screenshot%202021-06-12%20181633.png)
