@@ -52,7 +52,25 @@
          
       @1   
          $instr[31:0] = $imem_rd_data[31:0];
-         `BOGUS_USE($instr)
+         
+         // RV_D4SK2_L3_Lab for RV Instruction Types IRSBJU Decode Logic
+         
+         $is_i_instr = $instr[6:2] ==? 5'b0000x || $instr[6:2] ==? 5'b001x0 || 
+                       $instr[6:2] ==? 5'b11001;
+         $is_r_instr = $instr[6:2] ==? 5'b01011 || $instr[6:2] ==? 5'b01100 || 
+                       $instr[6:2] ==? 5'b01110 || $instr[6:2] ==? 5'b10100;
+         $is_s_instr = $instr[6:2] ==? 5'b0100x;
+         $is_b_instr = $instr[6:2] ==? 5'b11000;
+         $is_j_instr = $instr[6:2] ==? 5'b11011;
+         $is_u_instr = $instr[6:2] ==? 5'b0x101;
+         
+         // RV_D4SK2_L4_Lab for Immediate Instruction Decode Logic for RV-ISBUJ
+         $imm[31:0] = $is_i_instr ? { {21{$instr[31]}}, $instr[30:20] } :
+                      $is_s_instr ? { {21{$instr[31]}}, $instr[30:25], $instr[11:7] } :
+                      $is_b_instr ? { {20{$instr[31]}}, $instr[7], $instr[30:25], $instr[11:8], '0 } :
+                      $is_u_instr ? { $instr[31:20], $instr[19:12], {12{'0}} } :
+                      $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20], $instr[30:21], '0 };
+
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
