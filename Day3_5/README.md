@@ -6,3 +6,12 @@ Refer to README at [stevehoover/RISC-V_MYTH_Workshop](https://github.com/steveho
 
 Add your codes in the [calculator_solutions.tlv](calculator_solutions.tlv) and [risc-v_solutions.tlv](risc-v_solutions.tlv) files and **keep committing** to your repository after every lab.
 
+# Day 4
+
+## Decoding Instruction Type
+
+![a](Screenshot%202021-06-11%20220155.png)
+
+## Decoding Instructions
+
+![c](Screenshot%202021-06-11%20230912.png)
