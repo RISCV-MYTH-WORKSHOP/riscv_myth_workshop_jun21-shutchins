@@ -74,13 +74,28 @@
                       '0; // better way (valid?)
          `BOGUS_USE($imm)
          
+         // RV_D4SK2_L6_Lab To Decode Instructions Field Based on Instr type RV-ISBUJ
+         $funct7_valid = $is_r_instr ;
+         $funct3_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
+         $rs2_valid = $is_r_instr || $is_s_instr || $is_b_instr;
+         $rs1_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
+         $rd_valid = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
+         $opcode_valid = '1; // well, maybe
+         
          // RV_D4SK2_L5_Lab To Decode other Fields of Instructions for RV-ISBUJ
-         $funct7[6:0] = $instr[31:25];
-         $funct3[2:0] = $instr[14:12];
-         $rs2[4:0] = $instr[24:20];
-         $rs1[4:0] = $instr[19:15];
-         $rd[4:0] = $instr[11:7];
-         $opcode[6:0] = $instr[6:0];
+         ?$funct7_valid
+            $funct7[6:0] = $instr[31:25];
+         ?$funct3_valid
+            $funct3[2:0] = $instr[14:12];
+         ?$rs2_valid
+            $rs2[4:0] = $instr[24:20];
+         ?$rs1_valid
+            $rs1[4:0] = $instr[19:15];
+         ?$rd_valid
+            $rd[4:0] = $instr[11:7];
+         ?$opcode_valid
+            $opcode[6:0] = $instr[6:0];
+         
          `BOGUS_USE($funct7 $funct3 $rs2 $rs1 $rd $opcode)
          
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
