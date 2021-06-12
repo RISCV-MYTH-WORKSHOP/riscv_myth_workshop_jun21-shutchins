@@ -41,11 +41,11 @@
       @0
          $reset = *reset;
 
-
-
-      // YOUR CODE HERE
-      // ...
-
+         // YOUR CODE HERE
+         // RV_D4SK2_L1_Implementation Plan and Lab for PC
+         
+         $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+         
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
