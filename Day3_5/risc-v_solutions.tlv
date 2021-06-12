@@ -44,7 +44,9 @@
          // YOUR CODE HERE
          // RV_D4SK2_L1_Implementation Plan and Lab for PC
          
-         $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+         // Replaced to handle branches. 
+         // WAS: $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+         $pc[31:0] = >>1$reset ? 32'b0 : >>1$taken_br ? >>1$br_tgt_pc : >>1$pc + 32'd4;
          
          // RV_D4SK2_L2_Lab For Instruction Fetch Logic
          $imem_rd_en = !$reset;
@@ -119,10 +121,10 @@
          
          ?$rs1_valid
             $rf_rd_index1[4:0] = $rs1;
-            $src1_value[31:0] = >>1$rf_rd_data1[31:0];
+            $src1_value[31:0] = $rf_rd_data1;
          ?$rs2_valid
             $rf_rd_index2[4:0] = $rs2;
-            $src2_value[31:0] = >>1$rf_rd_data2[31:0];
+            $src2_value[31:0] = $rf_rd_data2;
          
          // RV_D4SK3_L3_Lab for ALU Operations for add/addi
          
@@ -138,12 +140,26 @@
             $rf_wr_index[4:0] = $rd;
             $rf_wr_data[31:0] = $result;
          
+         // RV_D4SK3_L6_Lab For Implementing Branch Instructions
+         $taken_br =
+            $is_beq ? ($src1_value == $src2_value) :
+            $is_bne ? ($src1_value != $src2_value) :
+            $is_blt ? (($src1_value < $src2_value) ^ ($src1_value[31] != $src2_value[31])) :
+            $is_bge ? (($src1_value >= $src2_value) ^ ($src1_value[31] != $src2_value[31])) :
+            $is_bltu ? ($src1_value < $src2_value) :
+            $is_bgeu ? ($src1_value >= $src2_value) :
+            1'b0;
+            `BOGUS_USE($taken_br)
+         
+         $br_tgt_pc[31:0] = $taken_br ? $pc + $imm : '0;
+         
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
    
    // Assert these to end simulation (before Makerchip cycle limit).
-   *passed = *cyc_cnt > 40;
+   // WAS: *passed = *cyc_cnt > 40;
+   *passed = |cpu/xreg[10]>>5$value == (1+2+3+4+5+6+7+8+9);
    *failed = 1'b0;
    
    // Macro instantiations for:
