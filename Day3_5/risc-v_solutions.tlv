@@ -63,18 +63,29 @@
          $is_b_instr = $instr[6:2] ==? 5'b11000;
          $is_j_instr = $instr[6:2] ==? 5'b11011;
          $is_u_instr = $instr[6:2] ==? 5'b0x101;
+         `BOGUS_USE($is_r_instr)
          
          // RV_D4SK2_L4_Lab for Immediate Instruction Decode Logic for RV-ISBUJ
          $imm[31:0] = $is_i_instr ? { {21{$instr[31]}}, $instr[30:20] } :
                       $is_s_instr ? { {21{$instr[31]}}, $instr[30:25], $instr[11:7] } :
                       $is_b_instr ? { {20{$instr[31]}}, $instr[7], $instr[30:25], $instr[11:8], '0 } :
                       $is_u_instr ? { $instr[31:20], $instr[19:12], {12{'0}} } :
-                      $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20], $instr[30:21], '0 };
-
+                      $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20], $instr[30:21], '0 } :
+                      '0; // better way (valid?)
+         `BOGUS_USE($imm)
+         
+         // RV_D4SK2_L5_Lab To Decode other Fields of Instructions for RV-ISBUJ
+         $funct7[6:0] = $instr[31:25];
+         $funct3[2:0] = $instr[14:12];
+         $rs2[4:0] = $instr[24:20];
+         $rs1[4:0] = $instr[19:15];
+         $rd[4:0] = $instr[11:7];
+         $opcode[6:0] = $instr[6:0];
+         `BOGUS_USE($funct7 $funct3 $rs2 $rs1 $rd $opcode)
+         
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
-
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = *cyc_cnt > 40;
