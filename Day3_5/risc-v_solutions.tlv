@@ -72,7 +72,6 @@
                       $is_u_instr ? { $instr[31:20], $instr[19:12], {12{'0}} } :
                       $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20], $instr[30:21], '0 } :
                       '0; // better way (valid?)
-         `BOGUS_USE($imm)
          
          // RV_D4SK2_L6_Lab To Decode Instructions Field Based on Instr type RV-ISBUJ
          $funct7_valid = $is_r_instr ;
@@ -113,8 +112,31 @@
          
          `BOGUS_USE($dec_bits $is_beq $is_bne $is_blt $is_bge $is_bltu $is_bgeu)
          `BOGUS_USE($is_addi $is_add)
-         // RV_D4SK3_L1_Lab To Decode Individual Instruction
-
+         
+         // RV_D4SK3_L1_Lab For Register File Read
+         $rf_rd_en1 = $rs1_valid;
+         $rf_rd_en2 = $rs2_valid;
+         
+         ?$rs1_valid
+            $rf_rd_index1[4:0] = $rs1;
+            $src1_value[31:0] = >>1$rf_rd_data1[31:0];
+         ?$rs2_valid
+            $rf_rd_index2[4:0] = $rs2;
+            $src2_value[31:0] = >>1$rf_rd_data2[31:0];
+         
+         // RV_D4SK3_L3_Lab for ALU Operations for add/addi
+         
+         $result[31:0] =
+            $is_addi ? $src1_value + $imm :
+            $is_add ? $src1_value + $src2_value :
+            32'bx;
+         
+         // RV_D4SK3_L4_Lab for Register File Write (ALU)
+         $rf_wr_en = $rd_valid && ($rd != 4'b0);
+         
+         ?$rd_valid
+            $rf_wr_index[4:0] = $rd;
+            $rf_wr_data[31:0] = $result;
          
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
@@ -131,7 +153,7 @@
    //  o CPU visualization
    |cpu
       m4+imem(@1)    // Args: (read stage)
-      //m4+rf(@1, @1)  // Args: (read stage, write stage) - if equal, no register bypass is required
+      m4+rf(@1, @1)  // Args: (read stage, write stage) - if equal, no register bypass is required
       //m4+dmem(@4)    // Args: (read/write stage)
    
    m4+cpu_viz(@4)    // For visualisation, argument should be at least equal to the last stage of CPU logic. @4 would work for all labs.
