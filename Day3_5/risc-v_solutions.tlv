@@ -35,7 +35,7 @@
    m4_asm(SW, r0, r10, 00100)           // Store final result to memory
    m4_asm(LW, r15, r0, 00100)           // Read final result back from memory
    // Optional:
-   // m4_asm(JAL, r7, 00000000000000000000) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
+   m4_asm(JAL, r7, 00000000000000000000) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
    m4_define_hier(['M4_IMEM'], M4_NUM_INSTRS)
 
    |cpu
@@ -45,13 +45,17 @@
          // YOUR CODE HERE
          // RV_D5SK2_L2_Lab for Branches To Correct the Branch Target Path
       @3   
-         $valid = ( !(>>1$valid_taken_br || >>2$valid_taken_br || >>1$is_load || >>2$is_load) );
+         $valid = ( !(>>1$valid_taken_br || >>2$valid_taken_br || 
+                      >>1$is_load || >>2$is_load || 
+                      >>1$valid_jump || >>2$valid_jump ) );
          
       @0   
          // RV_D5SK1_L3_Lab to Code 3-Cycle RISCV To Take Care of Invalid Cycles         
          $pc[31:0] = >>1$reset ? 32'b0 :
-            >>3$valid_taken_br ? >>3$br_tgt_pc :
-            >>3$valid_load ? >>3$inc_pc :
+            >>3$valid_taken_br            ? >>3$br_tgt_pc :
+            >>3$valid_jump && >>3$is_jal  ? >>3$br_tgt_pc :
+            >>3$valid_jump && >>3$is_jalr ? >>3$jalr_tgt_pc :
+            >>3$valid_load                ? >>3$inc_pc :
             >>1$inc_pc;
          
          // RV_D4SK2_L2_Lab For Instruction Fetch Logic
@@ -112,7 +116,8 @@
          $is_lui =   $dec_bits ==? 11'bx_xxx_0110111;
          $is_auipc = $dec_bits ==? 11'bx_xxx_0010111;
          $is_jal =   $dec_bits ==? 11'bx_xxx_1101111;
-         $is_jalr =  $dec_bits ==? 11'bx_000_1100111;
+         $is_jalr =  $dec_bits ==? 11'bx_000_1101111;
+         $is_jump =  ($is_jal || $is_jalr);
          
          $is_beq =   $dec_bits ==? 11'bx_000_1100011;
          $is_bne =   $dec_bits ==? 11'bx_001_1100011;
@@ -217,14 +222,15 @@
          
       @2
          $br_tgt_pc[31:0] = $pc + $imm;
+         $jalr_tgt_pc[31:0] = $src1_value + $imm;
          
       @3   
          $valid_taken_br = $valid && $taken_br;
          $valid_load = $valid && $is_load;
+         $valid_jump = $valid && $is_jump;
          
       @4
-         //RV_D5SK3_L3_Lab to Instantiate Data Memory to the CPU
-         
+         //RV_D5SK3_L3_Lab to Instantiate Data Memory to the CPU         
          $dmem_addr[3:0] = $result[5:2];
          
          // load
@@ -242,7 +248,6 @@
       //       other than those specifically expected in the labs. You'll get strange errors for these.
    
    // Assert these to end simulation (before Makerchip cycle limit).
-   // WAS: *passed = *cyc_cnt > 40;
    *passed = |cpu/xreg[15]>>5$value == (1+2+3+4+5+6+7+8+9);
    *failed = 1'b0;
    
