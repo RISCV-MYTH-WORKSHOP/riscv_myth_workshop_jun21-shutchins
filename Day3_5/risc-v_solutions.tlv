@@ -64,7 +64,6 @@
          
       @1   
          $instr[31:0] = $imem_rd_data[31:0];
-         // Note: I omitted the width of this initially. It created much grief!
          $inc_pc[31:0] = $pc + 32'd4;
          
          // RV_D4SK2_L3_Lab for RV Instruction Types IRSBJU Decode Logic
@@ -122,6 +121,7 @@
          $is_addi = $dec_bits ==? 11'bx_000_0010011;
          $is_add = $dec_bits ==? 11'b0_000_0110011;
          
+      @2
          // RV_D4SK3_L1_Lab For Register File Read
          $rf_rd_en1 = $rs1_valid;
          $rf_rd_en2 = $rs2_valid;
@@ -132,7 +132,8 @@
          ?$rs2_valid
             $rf_rd_index2[4:0] = $rs2;
             $src2_value[31:0] = $rf_rd_data2;
-         
+            
+      @3
          // RV_D4SK3_L3_Lab for ALU Operations for add/addi
          
          $result[31:0] =
@@ -157,6 +158,7 @@
             $is_bgeu ? ($src1_value >= $src2_value) :
             1'b0;
          
+      @2
          $br_tgt_pc[31:0] = $pc + $imm;
          
       @3   
@@ -179,7 +181,7 @@
    //  o CPU visualization
    |cpu
       m4+imem(@1)    // Args: (read stage)
-      m4+rf(@1, @1)  // Args: (read stage, write stage) - if equal, no register bypass is required
+      m4+rf(@2, @3)  // Args: (read stage, write stage) - if equal, no register bypass is required
       //m4+dmem(@4)    // Args: (read/write stage)
    
    m4+cpu_viz(@4)    // For visualisation, argument should be at least equal to the last stage of CPU logic. @4 would work for all labs.
