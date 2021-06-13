@@ -42,21 +42,15 @@
          $reset = *reset;
 
          // YOUR CODE HERE
-         // RV_D5SK1_L2_Lab To Create 3-Cycle Valid Signal
+         // RV_D5SK2_L2_Lab for Branches To Correct the Branch Target Path
+      @3   
+         $valid = (! >>1$valid_taken_br && ! >>2$valid_taken_br);
          
-         $start = >>1$reset && !$reset;
-         $valid = $reset ? 1'b0 : $start ? 1'b1 : >>3$valid;
-         
-         // RV_D4SK2_L1_Implementation Plan and Lab for PC
-         
-         // Replaced to handle branches. 
-         // WAS: $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
-         // WAS: $pc[31:0] = >>1$reset ? 32'b0 : >>1$taken_br ? >>1$br_tgt_pc : >>1$pc + 32'd4;
-         
-         // RV_D5SK1_L3_Lab to Code 3-Cycle RISCV To Take Care of Invalid Cycles
+      @0   
+         // RV_D5SK1_L3_Lab to Code 3-Cycle RISCV To Take Care of Invalid Cycles         
          $pc[31:0] = >>1$reset ? 32'b0 :
             >>3$valid_taken_br ? >>3$br_tgt_pc :
-            >>3$inc_pc;
+            >>1$inc_pc;
          
          // RV_D4SK2_L2_Lab For Instruction Fetch Logic
          $imem_rd_en = !$reset;
@@ -127,11 +121,13 @@
          $rf_rd_en2 = $rs2_valid;
          
          ?$rs1_valid
-            $rf_rd_index1[4:0] = $rs1;
-            $src1_value[31:0] = $rf_rd_data1;
+            $rf_rd_index1[4:0] = $rs1;            
+            $src1_value[31:0] = (>>1$rf_wr_en && >>1$rd == $rs1) ?
+               >>1$result : $rf_rd_data1;
          ?$rs2_valid
             $rf_rd_index2[4:0] = $rs2;
-            $src2_value[31:0] = $rf_rd_data2;
+            $src2_value[31:0] = (>>1$rf_wr_en && >>1$rd == $rs2) ?
+               >>1$result : $rf_rd_data2;
             
       @3
          // RV_D4SK3_L3_Lab for ALU Operations for add/addi
