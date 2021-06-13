@@ -42,6 +42,11 @@
          $reset = *reset;
 
          // YOUR CODE HERE
+         // RV_D5SK1_L2_Lab To Create 3-Cycle Valid Signal
+         
+         $start = >>1$reset && !$reset;
+         $valid = $reset ? 1'b0 : $start ? 1'b1 : >>3$valid;
+         
          // RV_D4SK2_L1_Implementation Plan and Lab for PC
          
          // Replaced to handle branches. 
