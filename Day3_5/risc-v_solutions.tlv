@@ -51,7 +51,12 @@
          
          // Replaced to handle branches. 
          // WAS: $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
-         $pc[31:0] = >>1$reset ? 32'b0 : >>1$taken_br ? >>1$br_tgt_pc : >>1$pc + 32'd4;
+         // WAS: $pc[31:0] = >>1$reset ? 32'b0 : >>1$taken_br ? >>1$br_tgt_pc : >>1$pc + 32'd4;
+         
+         // RV_D5SK1_L3_Lab to Code 3-Cycle RISCV To Take Care of Invalid Cycles
+         $pc[31:0] = >>1$reset ? 32'b0 :
+            >>3$valid_taken_br ? >>3$br_tgt_pc :
+            >>3$inc_pc;
          
          // RV_D4SK2_L2_Lab For Instruction Fetch Logic
          $imem_rd_en = !$reset;
@@ -59,6 +64,8 @@
          
       @1   
          $instr[31:0] = $imem_rd_data[31:0];
+         // Note: I omitted the width of this initially. It created much grief!
+         $inc_pc[31:0] = $pc + 32'd4;
          
          // RV_D4SK2_L3_Lab for RV Instruction Types IRSBJU Decode Logic
          
@@ -86,7 +93,6 @@
          $rs2_valid = $is_r_instr || $is_s_instr || $is_b_instr;
          $rs1_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
          $rd_valid = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
-         $opcode_valid = '1; // well, maybe
          
          // RV_D4SK2_L5_Lab To Decode other Fields of Instructions for RV-ISBUJ
          ?$funct7_valid
@@ -99,8 +105,7 @@
             $rs1[4:0] = $instr[19:15];
          ?$rd_valid
             $rd[4:0] = $instr[11:7];
-         ?$opcode_valid
-            $opcode[6:0] = $instr[6:0];
+         $opcode[6:0] = $instr[6:0];
          
          `BOGUS_USE($funct7 $funct3 $rs2 $rs1 $rd $opcode)
          
@@ -116,9 +121,6 @@
          
          $is_addi = $dec_bits ==? 11'bx_000_0010011;
          $is_add = $dec_bits ==? 11'b0_000_0110011;
-         
-         `BOGUS_USE($dec_bits $is_beq $is_bne $is_blt $is_bge $is_bltu $is_bgeu)
-         `BOGUS_USE($is_addi $is_add)
          
          // RV_D4SK3_L1_Lab For Register File Read
          $rf_rd_en1 = $rs1_valid;
@@ -139,7 +141,7 @@
             32'bx;
          
          // RV_D4SK3_L4_Lab for Register File Write (ALU)
-         $rf_wr_en = $rd_valid && ($rd != 4'b0);
+         $rf_wr_en = $rd_valid && $rd != 5'b0 && $valid;
          
          ?$rd_valid
             $rf_wr_index[4:0] = $rd;
@@ -154,9 +156,12 @@
             $is_bltu ? ($src1_value < $src2_value) :
             $is_bgeu ? ($src1_value >= $src2_value) :
             1'b0;
-            `BOGUS_USE($taken_br)
          
-         $br_tgt_pc[31:0] = $taken_br ? $pc + $imm : '0;
+         $br_tgt_pc[31:0] = $pc + $imm;
+         
+      @3   
+         // Reference solution has this here. Any difference is currently subtle.
+         $valid_taken_br = $valid && $taken_br;
          
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
