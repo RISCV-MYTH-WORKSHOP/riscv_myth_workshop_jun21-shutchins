@@ -144,12 +144,9 @@
          $is_sltu =  $dec_bits ==? 11'b0_011_0110011;
          $is_xor =   $dec_bits ==? 11'b0_100_0110011;
          $is_srl =   $dec_bits ==? 11'b0_101_0110011;
-         $is_srl =   $dec_bits ==? 11'b0_101_0110011;
          $is_sra =   $dec_bits ==? 11'b1_101_0110011;
          $is_or =    $dec_bits ==? 11'b0_110_0110011;
          $is_and =   $dec_bits ==? 11'b0_011_0110011;
-         
-         `BOGUS_USE($is_lui $is_auipc $is_jal $is_jalr $is_sb $is_sh $is_sw $is_slti $is_sltiu $is_xori $is_ori $is_andi $is_slli $is_srli $is_srai $is_sub $is_sll $is_slt $is_sltu $is_xor $is_srl $is_srl $is_sra $is_or $is_and)
          
       @2
          // RV_D4SK3_L1_Lab For Register File Read
@@ -167,11 +164,39 @@
             
       @3
          // RV_D4SK3_L3_Lab for ALU Operations for add/addi
+         // RV_D5SK2_L4_Lab To Code Complete ALU
          
          $result[31:0] =
+            $is_andi ? $src1_value & $imm :
+            $is_ori ? $src1_value | $imm :
+            $is_xori ? $src1_value ^ $imm :
             $is_addi ? $src1_value + $imm :
+            $is_slli ? $src1_value << $imm[5:0] :
+            $is_srli ? $src1_value >> $imm[5:0] :
+            $is_and ? $src1_value & $src2_value :
+            $is_or ? $src1_value | $src2_value :
+            $is_xor ? $src1_value ^ $src2_value :
             $is_add ? $src1_value + $src2_value :
+            $is_sub ? $src1_value - $src2_value :
+            $is_sll ? $src1_value << $src2_value[4:0] :
+            $is_srl ? $src1_value >> $src2_value[4:0] :
+            $is_sltu ? $src1_value < $src2_value :
+            $is_sltiu ? $src1_value < $imm :
+            $is_lui ? {$imm[31:12], 12'b0} :
+            $is_auipc ? $pc + $imm :
+            $is_jal ? $pc + 4 :
+            $is_jalr ? $pc + 4 :
+            $is_srai ? { { 32{$src1_value[31]}}, $src1_value } >> $imm[4:0] :
+            $is_slt ? ($src1_value[31] == $src2_value[31]) ? $sltu_rslt : {31'b0,$src1_value[31]} :
+            $is_slti ? ($src1_value[31] == $imm[31]) ? $sltiu_rslt : {31'b0,$src1_value[31]} :
+            $is_sra ? { { 32{$src1_value[31]}}, $src1_value } >> $src2_value[4:0] :         
+            // invalid/unimplemented instruction
             32'bx;
+         
+         ?$is_sltu
+            $sltu_rslt[31:0] = $result;
+         ?$is_sltiu
+            $sltiu_rslt[31:0] = $result;
          
          // RV_D4SK3_L4_Lab for Register File Write (ALU)
          $rf_wr_en = $rd_valid && $rd != 5'b0 && $valid;
