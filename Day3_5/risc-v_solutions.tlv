@@ -20,7 +20,7 @@
    //  r12 (a2): 10
    //  r13 (a3): 1..10
    //  r14 (a4): Sum
-   // 
+   //   
    // External to function:
    m4_asm(ADD, r10, r0, r0)             // Initialize r10 (a0) to 0.
    // Function:
@@ -32,7 +32,8 @@
    m4_asm(ADDI, r13, r13, 1)            // Increment intermediate register by 1
    m4_asm(BLT, r13, r12, 1111111111000) // If a3 is less than a2, branch to label named <loop>
    m4_asm(ADD, r10, r14, r0)            // Store final result to register a0 so that it can be read by main program
-   
+   m4_asm(SW, r0, r10, 00100)           // Store final result to memory
+   m4_asm(LW, r15, r0, 00100)           // Read final result back from memory
    // Optional:
    // m4_asm(JAL, r7, 00000000000000000000) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
    m4_define_hier(['M4_IMEM'], M4_NUM_INSTRS)
@@ -44,12 +45,13 @@
          // YOUR CODE HERE
          // RV_D5SK2_L2_Lab for Branches To Correct the Branch Target Path
       @3   
-         $valid = (! >>1$valid_taken_br && ! >>2$valid_taken_br);
+         $valid = ( !(>>1$valid_taken_br || >>2$valid_taken_br || >>1$is_load || >>2$is_load) );
          
       @0   
          // RV_D5SK1_L3_Lab to Code 3-Cycle RISCV To Take Care of Invalid Cycles         
          $pc[31:0] = >>1$reset ? 32'b0 :
             >>3$valid_taken_br ? >>3$br_tgt_pc :
+            >>3$valid_load ? >>3$inc_pc :
             >>1$inc_pc;
          
          // RV_D4SK2_L2_Lab For Instruction Fetch Logic
@@ -170,7 +172,7 @@
             $is_andi ? $src1_value & $imm :
             $is_ori ? $src1_value | $imm :
             $is_xori ? $src1_value ^ $imm :
-            $is_addi ? $src1_value + $imm :
+            ($is_addi || $is_load || $is_s_instr) ? $src1_value + $imm :
             $is_slli ? $src1_value << $imm[5:0] :
             $is_srli ? $src1_value >> $imm[5:0] :
             $is_and ? $src1_value & $src2_value :
@@ -189,7 +191,7 @@
             $is_srai ? { { 32{$src1_value[31]}}, $src1_value } >> $imm[4:0] :
             $is_slt ? ($src1_value[31] == $src2_value[31]) ? $sltu_rslt : {31'b0,$src1_value[31]} :
             $is_slti ? ($src1_value[31] == $imm[31]) ? $sltiu_rslt : {31'b0,$src1_value[31]} :
-            $is_sra ? { { 32{$src1_value[31]}}, $src1_value } >> $src2_value[4:0] :         
+            $is_sra ? { { 32{$src1_value[31]}}, $src1_value } >> $src2_value[4:0] :
             // invalid/unimplemented instruction
             32'bx;
          
@@ -199,11 +201,9 @@
             $sltiu_rslt[31:0] = $result;
          
          // RV_D4SK3_L4_Lab for Register File Write (ALU)
-         $rf_wr_en = $rd_valid && $rd != 5'b0 && $valid;
-         
-         ?$rd_valid
-            $rf_wr_index[4:0] = $rd;
-            $rf_wr_data[31:0] = $result;
+         $rf_wr_en = ($rd_valid && $rd != 5'b0 && $valid) || >>2$valid_load;
+         $rf_wr_index[4:0] = >>2$valid_load ? >>2$rd : $rd;
+         $rf_wr_data[31:0] = >>2$valid_load ? >>2$ld_data : $result;
          
          // RV_D4SK3_L6_Lab For Implementing Branch Instructions
          $taken_br =
@@ -219,16 +219,31 @@
          $br_tgt_pc[31:0] = $pc + $imm;
          
       @3   
-         // Reference solution has this here. Any difference is currently subtle.
          $valid_taken_br = $valid && $taken_br;
+         $valid_load = $valid && $is_load;
          
+      @4
+         //RV_D5SK3_L3_Lab to Instantiate Data Memory to the CPU
+         
+         $dmem_addr[3:0] = $result[5:2];
+         
+         // load
+         $dmem_rd_en = $is_load;
+         
+         // store
+         $dmem_wr_en = $is_s_instr && $valid;
+         $dmem_wr_data[31:0] = $src2_value;
+         
+      @5
+         $ld_data[31:0] = $dmem_rd_data;
+      
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
    
    // Assert these to end simulation (before Makerchip cycle limit).
    // WAS: *passed = *cyc_cnt > 40;
-   *passed = |cpu/xreg[10]>>5$value == (1+2+3+4+5+6+7+8+9);
+   *passed = |cpu/xreg[15]>>5$value == (1+2+3+4+5+6+7+8+9);
    *failed = 1'b0;
    
    // Macro instantiations for:
@@ -239,7 +254,7 @@
    |cpu
       m4+imem(@1)    // Args: (read stage)
       m4+rf(@2, @3)  // Args: (read stage, write stage) - if equal, no register bypass is required
-      //m4+dmem(@4)    // Args: (read/write stage)
+      m4+dmem(@4)    // Args: (read/write stage)
    
    m4+cpu_viz(@4)    // For visualisation, argument should be at least equal to the last stage of CPU logic. @4 would work for all labs.
    
